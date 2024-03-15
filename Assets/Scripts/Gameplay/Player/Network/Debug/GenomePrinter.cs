@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GenomePrinter
 {
-    public static void PrintGenome(Genome genome, string path)
+    public static void PrintGenome(Genome genome)
     {
         Debug.Log("Printing genome");
         foreach (NodeGenes node in genome.GetNodeGenes().Values)
