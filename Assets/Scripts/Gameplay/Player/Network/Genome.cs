@@ -115,7 +115,7 @@ public class Genome
      * @param parent2 - the less fit parent genome
      **/
 
-    public Genome Crossover(Genome parent1, Genome parent2)
+    public static Genome Crossover(Genome parent1, Genome parent2)
     {
         Genome child = new Genome();
         foreach (NodeGenes parentNode in parent1.GetNodeGenes().Values)
@@ -131,8 +131,14 @@ public class Genome
                     Random.Range(0, 1) == 1 ?
                     parent1Connection.Clone() :
                     parent2.GetConnectionGenes()[parent1Connection.GetInnovationNumber()].Clone();
+                child.AddConnectionGene(childConGen);
+            }
+            else //disjoint or excess gene
+            {
+                ConnectionGenes childConGen = parent1Connection.Clone();
+                child.AddConnectionGene(childConGen);
             }
         }
-        return null;
+        return child;
     }
 }
