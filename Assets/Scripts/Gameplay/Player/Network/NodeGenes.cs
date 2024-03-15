@@ -11,7 +11,7 @@ public class NodeGenes
         this.id = id;
     }
 
-    public NodeType GetType() => type;
+    public NodeType GetNodeType() => type;
 
     public int GetId() => id;
 
