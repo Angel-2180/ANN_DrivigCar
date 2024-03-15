@@ -2,21 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NetworkTrainer : MonoBehaviour
+public class NetworkTester : MonoBehaviour
 {
     // Start is called before the first frame update
     private void Start() //debug genome here
     {
-        InnovationGenerator innovation = new InnovationGenerator();
+        Counter innovation = new Counter();
         Genome parent1 = new Genome();
         Genome parent2 = new Genome();
 
-        NodeGenes input1 = new NodeGenes(NodeType.Input, 1);
-        NodeGenes input2 = new NodeGenes(NodeType.Input, 2);
-        NodeGenes input3 = new NodeGenes(NodeType.Input, 3);
-        NodeGenes hidden5 = new NodeGenes(NodeType.Hidden, 5);
-        NodeGenes hidden6 = new NodeGenes(NodeType.Hidden, 6);
-        NodeGenes output4 = new NodeGenes(NodeType.Output, 4);
+        NodeGenes input1 = new NodeGenes(NodeType.INPUT, 1);
+        NodeGenes input2 = new NodeGenes(NodeType.INPUT, 2);
+        NodeGenes input3 = new NodeGenes(NodeType.INPUT, 3);
+        NodeGenes hidden5 = new NodeGenes(NodeType.HIDDEN, 5);
+        NodeGenes hidden6 = new NodeGenes(NodeType.HIDDEN, 6);
+        NodeGenes output4 = new NodeGenes(NodeType.OUTPUT, 4);
 
         //parent1 : 1 -> 4, 2 -> 4 (disable), 3 -> 4, 2 -> 5, 5 -> 4, 1 -> 5
         //parent2 : 1 -> 4, 2 -> 4 (disable), 3 -> 4, 2 -> 5, 5 -> 4, 5 -> 6, 6 -> 4, 1 -> 5, 3 -> 5, 1 -> 6

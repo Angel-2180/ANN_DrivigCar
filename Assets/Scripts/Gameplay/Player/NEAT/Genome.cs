@@ -6,51 +6,57 @@ using UnityEngine;
 
 public class Genome
 {
-    private Dictionary<int, ConnectionGenes> connectionGenes;
-    private Dictionary<int, NodeGenes> nodeGenes;
+    private Dictionary<int, ConnectionGenes> _connectionGenes;
+    private Dictionary<int, NodeGenes> _nodeGenes;
 
     public Genome()
     {
-        connectionGenes = new Dictionary<int, ConnectionGenes>();
-        nodeGenes = new Dictionary<int, NodeGenes>();
+        _connectionGenes = new Dictionary<int, ConnectionGenes>();
+        _nodeGenes = new Dictionary<int, NodeGenes>();
     }
 
-    public Dictionary<int, ConnectionGenes> GetConnectionGenes() => connectionGenes;
+    public Genome(Genome genome)
+    {
+        _connectionGenes = new Dictionary<int, ConnectionGenes>(genome.GetConnectionGenes());
+        _nodeGenes = new Dictionary<int, NodeGenes>(genome.GetNodeGenes());
+    }
 
-    public Dictionary<int, NodeGenes> GetNodeGenes() => nodeGenes;
+    public Dictionary<int, ConnectionGenes> GetConnectionGenes() => _connectionGenes;
+
+    public Dictionary<int, NodeGenes> GetNodeGenes() => _nodeGenes;
 
     public void AddNodeGene(NodeGenes node)
     {
-        nodeGenes.Add(node.GetId(), node);
+        _nodeGenes.Add(node.GetId(), node);
     }
 
     public void AddConnectionGene(ConnectionGenes connection)
     {
-        connectionGenes.Add(connection.GetInnovationNumber(), connection);
+        _connectionGenes.Add(connection.GetInnovationNumber(), connection);
     }
 
-    public void AddConnectionMutation(InnovationGenerator innovation)
+    public void AddConnectionMutation(Counter innovation)
     {
-        NodeGenes node1 = nodeGenes[UnityEngine.Random.Range(0, nodeGenes.Count)];
-        NodeGenes node2 = nodeGenes[UnityEngine.Random.Range(0, nodeGenes.Count)];
+        NodeGenes node1 = _nodeGenes[UnityEngine.Random.Range(0, _nodeGenes.Count)];
+        NodeGenes node2 = _nodeGenes[UnityEngine.Random.Range(0, _nodeGenes.Count)];
         float weight = UnityEngine.Random.Range(-1f, 1f);
 
         bool isReversed = false;
-        if (node1.GetNodeType() == NodeType.Hidden && node2.GetNodeType() == NodeType.Input)
+        if (node1.GetNodeType() == NodeType.HIDDEN && node2.GetNodeType() == NodeType.INPUT)
         {
             isReversed = true;
         }
-        else if (node1.GetNodeType() == NodeType.Output && node2.GetNodeType() == NodeType.Hidden)
+        else if (node1.GetNodeType() == NodeType.OUTPUT && node2.GetNodeType() == NodeType.HIDDEN)
         {
             isReversed = true;
         }
-        else if (node1.GetNodeType() == NodeType.Output && node2.GetNodeType() == NodeType.Input)
+        else if (node1.GetNodeType() == NodeType.OUTPUT && node2.GetNodeType() == NodeType.INPUT)
         {
             isReversed = true;
         }
 
         bool connectionExists = false;
-        foreach (ConnectionGenes connection in connectionGenes.Values)
+        foreach (ConnectionGenes connection in _connectionGenes.Values)
         {
             if (connection.GetInNode() == node1.GetId() && connection.GetOutNode() == node2.GetId())
             {
@@ -75,16 +81,16 @@ public class Genome
             weight,
             true,
             innovation.GetInnovation());
-        connectionGenes.Add(newConnection.GetInnovationNumber(), newConnection);
+        _connectionGenes.Add(newConnection.GetInnovationNumber(), newConnection);
     }
 
-    public void AddNodeMutation(InnovationGenerator innovation)
+    public void AddNodeMutation(Counter innovation)
     {
-        ConnectionGenes connection = connectionGenes[UnityEngine.Random.Range(0, connectionGenes.Count)];
+        ConnectionGenes connection = _connectionGenes[UnityEngine.Random.Range(0, _connectionGenes.Count)];
 
-        NodeGenes inputNode = nodeGenes.GetValueOrDefault(connection.GetInNode());
-        NodeGenes outputNode = nodeGenes.GetValueOrDefault(connection.GetOutNode());
-        NodeGenes newNode = new NodeGenes(NodeType.Hidden, nodeGenes.Count);
+        NodeGenes inputNode = _nodeGenes.GetValueOrDefault(connection.GetInNode());
+        NodeGenes outputNode = _nodeGenes.GetValueOrDefault(connection.GetOutNode());
+        NodeGenes newNode = new NodeGenes(NodeType.HIDDEN, _nodeGenes.Count);
 
         connection.Disable();
 
@@ -102,9 +108,9 @@ public class Genome
             true,
             innovation.GetInnovation());
 
-        nodeGenes.Add(newNode.GetId(), newNode);
-        connectionGenes.Add(newConnection1.GetInnovationNumber(), newConnection1);
-        connectionGenes.Add(newConnection2.GetInnovationNumber(), newConnection2);
+        _nodeGenes.Add(newNode.GetId(), newNode);
+        _connectionGenes.Add(newConnection1.GetInnovationNumber(), newConnection1);
+        _connectionGenes.Add(newConnection2.GetInnovationNumber(), newConnection2);
     }
 
     public static Genome Crossover(Genome parent1, Genome parent2)
