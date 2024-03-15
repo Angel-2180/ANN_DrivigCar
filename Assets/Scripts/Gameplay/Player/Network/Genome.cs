@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,20 +31,20 @@ public class Genome
 
     public void AddConnectionMutation(InnovationGenerator innovation)
     {
-        NodeGenes node1 = nodeGenes[Random.Range(0, nodeGenes.Count)];
-        NodeGenes node2 = nodeGenes[Random.Range(0, nodeGenes.Count)];
-        float weight = Random.Range(-1f, 1f);
+        NodeGenes node1 = nodeGenes[UnityEngine.Random.Range(0, nodeGenes.Count)];
+        NodeGenes node2 = nodeGenes[UnityEngine.Random.Range(0, nodeGenes.Count)];
+        float weight = UnityEngine.Random.Range(-1f, 1f);
 
         bool isReversed = false;
-        if (node1.GetType() == NodeType.Hidden && node2.GetType() == NodeType.Input)
+        if (node1.GetNodeType() == NodeType.Hidden && node2.GetNodeType() == NodeType.Input)
         {
             isReversed = true;
         }
-        else if (node1.GetType() == NodeType.Output && node2.GetType() == NodeType.Hidden)
+        else if (node1.GetNodeType() == NodeType.Output && node2.GetNodeType() == NodeType.Hidden)
         {
             isReversed = true;
         }
-        else if (node1.GetType() == NodeType.Output && node2.GetType() == NodeType.Input)
+        else if (node1.GetNodeType() == NodeType.Output && node2.GetNodeType() == NodeType.Input)
         {
             isReversed = true;
         }
@@ -79,13 +80,7 @@ public class Genome
 
     public void AddNodeMutation(InnovationGenerator innovation)
     {
-        //existing connection is split
-        //new node is added where the connection was
-        //two new connections are added
-        //the new connection from the input node to the new node has a weight of 1
-        //the new connection from the new node to the output node has the same weight as the original connection
-
-        ConnectionGenes connection = connectionGenes[Random.Range(0, connectionGenes.Count)];
+        ConnectionGenes connection = connectionGenes[UnityEngine.Random.Range(0, connectionGenes.Count)];
 
         NodeGenes inputNode = nodeGenes.GetValueOrDefault(connection.GetInNode());
         NodeGenes outputNode = nodeGenes.GetValueOrDefault(connection.GetOutNode());
@@ -112,11 +107,6 @@ public class Genome
         connectionGenes.Add(newConnection2.GetInnovationNumber(), newConnection2);
     }
 
-    /**
-     * @param parent1 - the more fit parent genome
-     * @param parent2 - the less fit parent genome
-     **/
-
     public static Genome Crossover(Genome parent1, Genome parent2)
     {
         Genome child = new Genome();
@@ -130,7 +120,7 @@ public class Genome
             if (parent2.GetConnectionGenes().ContainsKey(parent1Connection.GetInnovationNumber()))
             {
                 ConnectionGenes childConGen =
-                    Random.Range(0, 1) == 1 ?
+                    UnityEngine.Random.Range(0, 1) == 1 ?
                     parent1Connection.Clone() :
                     parent2.GetConnectionGenes()[parent1Connection.GetInnovationNumber()].Clone();
                 child.AddConnectionGene(childConGen);
@@ -142,5 +132,196 @@ public class Genome
             }
         }
         return child;
+    }
+
+    public static float CompatibilityDistance(Genome genome1, Genome genome2, float c1, float c2, float c3)
+    {
+        int excessGenes = 0;
+        int disjointGenes = 0;
+        float avgWeightDiff = 0;
+        float weightDifference = 0;
+        int matchingGenes = 0;
+
+        //nodes
+        List<int> nodeKeys1 = genome1.GetNodeGenes().Keys.ToList();
+        List<int> nodeKeys2 = genome2.GetNodeGenes().Keys.ToList();
+        nodeKeys1.Sort();
+        nodeKeys2.Sort();
+
+        int highestInnovation1 = nodeKeys1[nodeKeys1.Count - 1];
+        int highestInnovation2 = nodeKeys2[nodeKeys2.Count - 1];
+        int indices = highestInnovation1 > highestInnovation2 ? highestInnovation1 : highestInnovation2;
+        for (int i = 0; i <= indices; i++)
+        {
+            NodeGenes node1 = genome1.GetNodeGenes().GetValueOrDefault(i);
+            NodeGenes node2 = genome2.GetNodeGenes().GetValueOrDefault(i);
+            if (node1 != null && node2 == null)
+            {
+                if (highestInnovation2 < i)
+                {
+                    excessGenes++;
+                }
+                else
+                {
+                    disjointGenes++;
+                }
+            }
+            else if (node1 == null && node2 != null)
+            {
+                if (highestInnovation1 < i)
+                {
+                    excessGenes++;
+                }
+                else
+                {
+                    disjointGenes++;
+                }
+            }
+        }
+
+        //connections
+        List<int> conKeys1 = genome1.GetConnectionGenes().Keys.ToList();
+        List<int> conKeys2 = genome2.GetConnectionGenes().Keys.ToList();
+        conKeys1.Sort();
+        conKeys2.Sort();
+
+        highestInnovation1 = conKeys1[conKeys1.Count - 1];
+        highestInnovation2 = conKeys2[conKeys2.Count - 1];
+        indices = highestInnovation1 > highestInnovation2 ? highestInnovation1 : highestInnovation2;
+
+        for (int i = 0; i <= indices; i++)
+        {
+            ConnectionGenes connection1 = genome1.GetConnectionGenes().GetValueOrDefault(i);
+            ConnectionGenes connection2 = genome2.GetConnectionGenes().GetValueOrDefault(i);
+            if (connection1 != null)
+            {
+                if (connection2 != null)
+                {
+                    matchingGenes++;
+                    weightDifference += Math.Abs(connection1.GetWeight() - connection2.GetWeight());
+                }
+                else if (highestInnovation2 < i)
+                {
+                    excessGenes++;
+                }
+                else
+                {
+                    disjointGenes++;
+                }
+            }
+            else if (connection2 != null)
+            {
+                if (highestInnovation1 < i)
+                {
+                    excessGenes++;
+                }
+                else
+                {
+                    disjointGenes++;
+                }
+            }
+        }
+
+        avgWeightDiff = weightDifference / matchingGenes;
+
+        int n = genome1.GetConnectionGenes().Count > genome2.GetConnectionGenes().Count ? genome1.GetConnectionGenes().Count : genome2.GetConnectionGenes().Count;
+
+        if (n < 20)
+        {
+            n = 1;
+        }
+
+        return (excessGenes * c1) / n + (disjointGenes * c2) / n + avgWeightDiff * c3;
+    }
+
+    public static void CountExcessDisMatchAvg(Genome genome1, Genome genome2, out int excess, out int disjoint, out int matching, out float averageW)
+    {
+        excess = 0;
+        disjoint = 0;
+        averageW = 0;
+        matching = 0;
+        float weightDifference = 0;
+
+        //nodes
+        List<int> nodeKeys1 = genome1.GetNodeGenes().Keys.ToList();
+        List<int> nodeKeys2 = genome2.GetNodeGenes().Keys.ToList();
+        nodeKeys1.Sort();
+        nodeKeys2.Sort();
+
+        int highestInnovation1 = nodeKeys1[nodeKeys1.Count - 1];
+        int highestInnovation2 = nodeKeys2[nodeKeys2.Count - 1];
+        int indices = highestInnovation1 > highestInnovation2 ? highestInnovation1 : highestInnovation2;
+        for (int i = 0; i <= indices; i++)
+        {
+            NodeGenes node1 = genome1.GetNodeGenes().GetValueOrDefault(i);
+            NodeGenes node2 = genome2.GetNodeGenes().GetValueOrDefault(i);
+            if (node1 != null && node2 == null)
+            {
+                if (highestInnovation2 < i)
+                {
+                    excess++;
+                }
+                else
+                {
+                    disjoint++;
+                }
+            }
+            else if (node1 == null && node2 != null)
+            {
+                if (highestInnovation1 < i)
+                {
+                    excess++;
+                }
+                else
+                {
+                    disjoint++;
+                }
+            }
+        }
+
+        //connections
+        List<int> conKeys1 = genome1.GetConnectionGenes().Keys.ToList();
+        List<int> conKeys2 = genome2.GetConnectionGenes().Keys.ToList();
+        conKeys1.Sort();
+        conKeys2.Sort();
+
+        highestInnovation1 = conKeys1[conKeys1.Count - 1];
+        highestInnovation2 = conKeys2[conKeys2.Count - 1];
+        indices = highestInnovation1 > highestInnovation2 ? highestInnovation1 : highestInnovation2;
+
+        for (int i = 0; i <= indices; i++)
+        {
+            ConnectionGenes connection1 = genome1.GetConnectionGenes().GetValueOrDefault(i);
+            ConnectionGenes connection2 = genome2.GetConnectionGenes().GetValueOrDefault(i);
+            if (connection1 != null)
+            {
+                if (connection2 != null)
+                {
+                    matching++;
+                    weightDifference += Math.Abs(connection1.GetWeight() - connection2.GetWeight());
+                }
+                else if (highestInnovation2 < i)
+                {
+                    excess++;
+                }
+                else
+                {
+                    disjoint++;
+                }
+            }
+            else if (connection2 != null)
+            {
+                if (highestInnovation1 < i)
+                {
+                    excess++;
+                }
+                else
+                {
+                    disjoint++;
+                }
+            }
+        }
+
+        averageW = weightDifference / matching;
     }
 }
