@@ -91,6 +91,8 @@ public class Genome
         NodeGenes outputNode = nodeGenes.GetValueOrDefault(connection.GetOutNode());
         NodeGenes newNode = new NodeGenes(NodeType.Hidden, nodeGenes.Count);
 
+        connection.Disable();
+
         ConnectionGenes newConnection1 = new ConnectionGenes(
             inputNode.GetId(),
             newNode.GetId(),

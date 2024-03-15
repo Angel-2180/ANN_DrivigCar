@@ -29,4 +29,9 @@ public class ConnectionGenes
     {
         return new ConnectionGenes(inNode, outNode, weight, expressed, innovationNumber);
     }
+
+    public void Disable()
+    {
+        expressed = false;
+    }
 }
