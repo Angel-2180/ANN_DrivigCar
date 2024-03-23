@@ -34,4 +34,9 @@ public class ConnectionGenes
     {
         _expressed = false;
     }
+
+    public void SetWeight(float weight)
+    {
+        _weight = weight;
+    }
 }
