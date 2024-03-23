@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class GenomePrinter
 {
-    public static void PrintGenome(Genome genome)
+    public static void PrintGenome(Genome genome, string path)
     {
         string genomeString = "";
         genomeString += "Nodes:\n";
@@ -17,6 +18,24 @@ public class GenomePrinter
         {
             genomeString += "Connection: " + connection.GetInNode() + " -> " + connection.GetOutNode() + " Weight: " + connection.GetWeight() + " Expressed: " + connection.IsExpressed() + " Innovation: " + connection.GetInnovationNumber() + "\n";
         }
-        Debug.Log(genomeString);
+
+        //you have to create the file before calling this method
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            using (FileStream fs = File.Create(path))
+            {
+                byte[] info = new System.Text.UTF8Encoding(true).GetBytes(genomeString);
+                fs.Write(info, 0, info.Length);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.Log(ex.ToString());
+        }
     }
 }
