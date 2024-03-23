@@ -8,6 +8,8 @@ public class Genome
 {
     private Dictionary<int, ConnectionGenes> _connectionGenes;
     private Dictionary<int, NodeGenes> _nodeGenes;
+    private Counter connectionInnovation;
+    private Counter nodeInnovation;
 
     public Genome()
     {
@@ -17,8 +19,23 @@ public class Genome
 
     public Genome(Genome genome)
     {
-        _connectionGenes = new Dictionary<int, ConnectionGenes>(genome.GetConnectionGenes());
-        _nodeGenes = new Dictionary<int, NodeGenes>(genome.GetNodeGenes());
+        _connectionGenes = new Dictionary<int, ConnectionGenes>();
+        _nodeGenes = new Dictionary<int, NodeGenes>();
+
+        foreach (int index in genome.GetConnectionGenes().Keys)
+        {
+            _connectionGenes.Add(index, genome.GetConnectionGenes()[index].Clone());
+        }
+
+        foreach (int index in genome.GetNodeGenes().Keys)
+        {
+            _nodeGenes.Add(index, genome.GetNodeGenes()[index].Clone());
+        }
+    }
+
+    public Genome Clone()
+    {
+        return new Genome(this);
     }
 
     public Dictionary<int, ConnectionGenes> GetConnectionGenes() => _connectionGenes;
@@ -329,5 +346,22 @@ public class Genome
         }
 
         averageW = weightDifference / matching;
+    }
+
+    internal void Mutate()
+    {
+        foreach (ConnectionGenes connection in _connectionGenes.Values)
+        {
+            if (UnityEngine.Random.Range(0f, 1f) < 0.8f)
+            {
+                connection.SetWeight(connection.GetWeight() * UnityEngine.Random.Range(-0.1f, 0.1f));
+            }
+            else
+            {
+                System.Random random = new System.Random();
+                connection.SetWeight(random.Next() * 4f - 2f);
+            }
+        }
+
     }
 }
