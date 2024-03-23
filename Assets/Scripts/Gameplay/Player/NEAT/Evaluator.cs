@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public abstract class Evaluator
+public class Evaluator
 {
     private int _populationSize;
     private Dictionary<Genome, Species> _speciesDic;
@@ -22,8 +22,12 @@ public abstract class Evaluator
     private const float ADD_CONNECTION_RATE = 0.75f;
     private const float ADD_NODE_RATE = 0.05f;
 
+    private float _highestFitness = 0;
+    private Genome _bestGenome;
+
     public Evaluator(int populationSize, Genome seedGenome, Counter nodeInnovation, Counter connectionInnovation)
     {
+        this.EvaluateGenome = EvaluateGenomeImpl;
         _populationSize = populationSize;
         _speciesDic = new Dictionary<Genome, Species>();
         _fitnessDic = new Dictionary<Genome, float>();
@@ -40,7 +44,7 @@ public abstract class Evaluator
         }
     }
 
-    private void Evaluate()
+    public void Evaluate()
     {
         //reset species
         foreach (Species species in _species)
@@ -50,6 +54,8 @@ public abstract class Evaluator
         _fitnessDic.Clear();
         _speciesDic.Clear();
         _nextGeneration.Clear();
+        _highestFitness = float.MinValue;
+        _bestGenome = null;
 
         //place genomes into species by using the compatibility distance
         foreach (Genome genome in _population)
@@ -93,6 +99,11 @@ public abstract class Evaluator
             species.AddAdjustedFitness(adjustedFitness);
             species.fitnessPopulation.Add(new FitnessGenome(genome, adjustedFitness));
             _fitnessDic.Add(genome, fitness);
+            if (fitness > _highestFitness)
+            {
+                _highestFitness = fitness;
+                _bestGenome = genome;
+            }
         }
 
         //put the best genome of each species into the next generation
@@ -108,11 +119,10 @@ public abstract class Evaluator
         //breed the rest of the genomes
         while (_nextGeneration.Count < _populationSize)
         {
-            Random r = new Random();
-            Species species = GetRandomSpeciesBiasedAdjustedFitness(r);
+            Species species = GetRandomSpeciesBiasedAdjustedFitness();
 
-            Genome parent1 = GetRandomGenomeBiasedAdjustedFitness(r);
-            Genome parent2 = GetRandomGenomeBiasedAdjustedFitness(r);
+            Genome parent1 = GetRandomGenomeBiasedAdjustedFitness();
+            Genome parent2 = GetRandomGenomeBiasedAdjustedFitness();
 
             Genome child;
             if (_fitnessDic[parent1] > _fitnessDic[parent2])
@@ -124,16 +134,16 @@ public abstract class Evaluator
                 child = Genome.Crossover(parent2, parent1);
             }
 
-            if (r.Next() < MUTATION_RATE)
+            if (UnityEngine.Random.Range(0, 1) < MUTATION_RATE)
             {
                 child.Mutate();
             }
-            if (r.Next() < ADD_CONNECTION_RATE)
+            if (UnityEngine.Random.Range(0, 1) < ADD_CONNECTION_RATE)
             {
                 child.AddConnectionMutation(_connectionInnovation);
             }
 
-            if (r.Next() < ADD_NODE_RATE)
+            if (UnityEngine.Random.Range(0, 1) < ADD_NODE_RATE)
             {
                 child.AddNodeMutation(_nodeInnovation);
             }
@@ -145,9 +155,14 @@ public abstract class Evaluator
         _nextGeneration = new List<Genome>();
     }
 
-    public abstract float EvaluateGenome(Genome genome);
+    public Func<Genome, float> EvaluateGenome;
 
-    private Species GetRandomSpeciesBiasedAdjustedFitness(Random r)
+    protected virtual float EvaluateGenomeImpl(Genome genome)
+    {
+        return 0;
+    }
+
+    private Species GetRandomSpeciesBiasedAdjustedFitness()
     {
         double completeWeight = 0;
         foreach (Species species in _species)
@@ -155,7 +170,7 @@ public abstract class Evaluator
             completeWeight += species.totalAdjustedFitness;
         }
 
-        double rand = r.NextDouble() * completeWeight;
+        double rand = UnityEngine.Random.Range(0,1) * completeWeight;
         double runningSum = 0;
         foreach (Species species in _species)
         {
@@ -168,24 +183,44 @@ public abstract class Evaluator
         throw new Exception("This should never happen");
     }
 
-    private Genome GetRandomGenomeBiasedAdjustedFitness(Random r)
+    private Genome GetRandomGenomeBiasedAdjustedFitness()
     {
         double completeWeight = 0;
         foreach (Species species in _species)
         {
             completeWeight += species.totalAdjustedFitness;
         }
-        double rand = r.NextDouble() * completeWeight;
+        double rand = UnityEngine.Random.Range(0, 1) * completeWeight;
         double runningSum = 0;
         foreach (Species species in _species)
         {
             runningSum += species.totalAdjustedFitness;
             if (runningSum >= rand)
             {
-                return species.fitnessPopulation[r.Next(0, species.fitnessPopulation.Count)].genome;
+                return species.fitnessPopulation[UnityEngine.Random.Range(0, species.fitnessPopulation.Count)].genome;
             }
         }
         throw new Exception("This should never happen");
+    }
+
+    public Genome GetBestGenome()
+    {
+        return _bestGenome;
+    }
+
+    public float GetHighestFitness()
+    {
+        return _highestFitness;
+    }
+
+    public int GetGenomeAmount()
+    {
+        return _population.Count;
+    }
+
+    public int GetSpeciesAmount()
+    {
+        return _species.Count;
     }
 
     public class FitnessGenome
