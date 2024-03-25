@@ -75,6 +75,37 @@ public class Evaluator
         {
             float r = RandomHelper.RandomZeroToOne();
             if (r > config.ASEXUAL_REPRODUCTION_RATE)
+            {
+                FitnessGenome parent1 = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
+                FitnessGenome parent2 = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
+                while (parent1 == parent2)
+                {
+                    parent2 = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
+                }
+                Genome child;
+                if (parent1.fitness > parent2.fitness)
+                {
+                    child = Genome.Crossover(parent1.genome, parent2.genome, config.DISABLED_GENE_INHERITING_CHANCE);
+                }
+                else
+                {
+                    child = Genome.Crossover(parent1.genome, parent2.genome, config.DISABLED_GENE_INHERITING_CHANCE);
+                }
+
+                //Mutations
+                if (RandomHelper.RandomZeroToOne() < config.MUTATION_RATE)
+                {
+                    child.Mutate();
+                }
+                if (RandomHelper.RandomZeroToOne() < config.ADD_NODE_RATE)
+                {
+                    child.AddNodeMutation(_connectionInnovation, _nodeInnovation);
+                }
+                if (RandomHelper.RandomZeroToOne() < config.ADD_CONNECTION_RATE)
+                {
+                    child.AddConnectionMutation(_connectionInnovation);
+                }
             }
+        }
     }
 }
