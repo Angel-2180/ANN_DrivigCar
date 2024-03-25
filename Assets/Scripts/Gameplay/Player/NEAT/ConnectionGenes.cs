@@ -15,6 +15,15 @@ public class ConnectionGenes
         this._innovationNumber = innovationNumber;
     }
 
+    public ConnectionGenes(ConnectionGenes copy)
+    {
+        this._inNode = copy.GetInNode();
+        this._outNode = copy.GetOutNode();
+        this._weight = copy.GetWeight();
+        this._expressed = copy.IsExpressed();
+        this._innovationNumber = copy.GetInnovationNumber();
+    }
+
     public int GetInNode() => _inNode;
 
     public int GetOutNode() => _outNode;
