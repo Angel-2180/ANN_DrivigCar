@@ -6,4 +6,14 @@ public static class RandomHelper
     {
         return UnityEngine.Random.Range(0f, 1f);
     }
+
+    public static int RandomInt(int min, int max)
+    {
+        return UnityEngine.Random.Range(min, max);
+    }
+
+    public static int RandomGaussian()
+    {
+        return UnityEngine.Random.Range(-1, 1);
+    }
 }
