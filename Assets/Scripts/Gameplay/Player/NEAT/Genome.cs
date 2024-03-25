@@ -31,11 +31,6 @@ public class Genome
         }
     }
 
-    public Genome Clone()
-    {
-        return new Genome(this);
-    }
-
     public Dictionary<int, ConnectionGenes> GetConnectionGenes() => _connectionGenes;
 
     public Dictionary<int, NodeGenes> GetNodeGenes() => _nodeGenes;
@@ -50,80 +45,124 @@ public class Genome
         _connectionGenes.Add(connection.GetInnovationNumber(), connection);
     }
 
-    public void AddConnectionMutation(Counter innovation)
+    public void AddConnectionMutation(Counter innovation, int maxAttempt)
     {
-        List<int> ints = new List<int>(_nodeGenes.Keys);
-        int inNode = ints[UnityEngine.Random.Range(0, ints.Count)];
-        ints.Remove(inNode);
-        int outNode = ints[UnityEngine.Random.Range(0, ints.Count)];
-
-        NodeGenes node1 = _nodeGenes.GetValueOrDefault(inNode);
-        NodeGenes node2 = _nodeGenes.GetValueOrDefault(outNode);
-
-        float weight = UnityEngine.Random.Range(-1f, 1f);
-
-        bool isReversed = false;
-        if (node1.GetNodeType() == NodeType.HIDDEN && node2.GetNodeType() == NodeType.INPUT)
+        int tries = 0;
+        bool success = false;
+        while (tries < maxAttempt && success == false)
         {
-            isReversed = true;
-        }
-        else if (node1.GetNodeType() == NodeType.OUTPUT && node2.GetNodeType() == NodeType.HIDDEN)
-        {
-            isReversed = true;
-        }
-        else if (node1.GetNodeType() == NodeType.OUTPUT && node2.GetNodeType() == NodeType.INPUT)
-        {
-            isReversed = true;
-        }
+            tries++;
 
-        if (isReversed)
-        {
-            NodeGenes temp = node1;
-            node1 = node2;
-            node2 = temp;
-        }
+            List<int> ints = _nodeGenes.Keys.ToList();
+            int inNode = ints[RandomHelper.RandomInt(0, ints.Count)];
+            int outNode = ints[RandomHelper.RandomInt(0, ints.Count)];
 
-        bool connectionExists = false;
-        foreach (ConnectionGenes connection in _connectionGenes.Values)
-        {
-            if (connection.GetInNode() == node1.GetId() && connection.GetOutNode() == node2.GetId())
+            NodeGenes inputNode = _nodeGenes[inNode];
+            NodeGenes outputNode = _nodeGenes[outNode];
+            float weight = RandomHelper.RandomGaussian();
+
+            bool reversed = false;
+            if (inputNode.GetNodeType() == NodeType.HIDDEN && outputNode.GetNodeType() == NodeType.INPUT)
             {
-                connectionExists = true;
-                break;
+                reversed = true;
             }
-            else if (connection.GetInNode() == node2.GetId() && connection.GetOutNode() == node1.GetId())
+            else if (inputNode.GetNodeType() == NodeType.OUTPUT && outputNode.GetNodeType() == NodeType.HIDDEN)
             {
-                connectionExists = true;
-                break;
+                reversed = true;
             }
-        }
+            else if (inputNode.GetNodeType() == NodeType.OUTPUT && outputNode.GetNodeType() == NodeType.INPUT)
+            {
+                reversed = true;
+            }
 
-        bool connectionImpossible = false;
-        if (node1.GetNodeType() == NodeType.INPUT && node2.GetNodeType() == NodeType.INPUT)
-        {
-            connectionImpossible = true;
-        }
-        else if (node1.GetNodeType() == NodeType.OUTPUT && node2.GetNodeType() == NodeType.OUTPUT)
-        {
-            connectionImpossible = true;
-        }
-        else if (node1 == node2)
-        {
-            connectionImpossible = true;
-        }
+            if (reversed)
+            {
+                int temp = inNode;
+                inNode = outNode;
+                outNode = temp;
+            }
 
-        if (connectionExists || connectionImpossible)
-        {
-            return;
-        }
+            bool connectionImpossible = false;
+            if (inputNode.GetNodeType() == NodeType.OUTPUT && outputNode.GetNodeType() == NodeType.INPUT)
+            {
+                connectionImpossible = true;
+            }
+            else if (inputNode.GetNodeType() == NodeType.OUTPUT && outputNode.GetNodeType() == NodeType.OUTPUT)
+            {
+                connectionImpossible = true;
+            }
+            else if (inputNode.GetNodeType() == NodeType.INPUT && outputNode.GetNodeType() == NodeType.INPUT)
+            {
+                connectionImpossible = true;
+            }
+            else if (inputNode == outputNode)
+            {
+                connectionImpossible = true;
+            }
 
-        ConnectionGenes newConnection = new ConnectionGenes(
-           node1.GetId(),
-           node2.GetId(),
-            weight,
-            true,
-            innovation.GetInnovation());
-        _connectionGenes.Add(newConnection.GetInnovationNumber(), newConnection);
+            // check for circular connection
+            List<int> needsCheck = new List<int>();
+            List<int> nodeIDs = new List<int>();
+            foreach (int ConnectionID in _connectionGenes.Keys)
+            {
+                ConnectionGenes con = _connectionGenes[ConnectionID];
+
+                if (con.GetInNode() == outNode)
+                {
+                    needsCheck.Add(outNode);
+                    nodeIDs.Add(outNode);
+                }
+            }
+            while (needsCheck.Count != 0)
+            {
+                int nodeID = needsCheck[0];
+                foreach (int ConnectionID in _connectionGenes.Keys)
+                {
+                    ConnectionGenes con = _connectionGenes[ConnectionID];
+                    if (con.GetInNode() == nodeID)
+                    {
+                        needsCheck.Add(con.GetOutNode());
+                        nodeIDs.Add(con.GetOutNode());
+                    }
+                }
+                needsCheck.RemoveAt(0);
+            }
+            foreach (int i in nodeIDs)
+            {
+                if (i == inNode)
+                {
+                    connectionImpossible = true;
+                    break;
+                }
+            }
+            bool connectionExists = false;
+            foreach (ConnectionGenes con in _connectionGenes.Values)
+            {
+                if (con.GetInNode() == inNode && con.GetOutNode() == outNode)
+                {
+                    connectionExists = true;
+                    break;
+                }
+                else if (con.GetInNode() == outNode && con.GetOutNode() == inNode)
+                {
+                    connectionExists = true;
+                    break;
+                }
+            }
+
+            if (connectionImpossible || connectionExists)
+            {
+                continue;
+            }
+
+            ConnectionGenes newConnection = new ConnectionGenes(inNode, outNode, weight, true, innovation.GetInnovation());
+            _connectionGenes.Add(newConnection.GetInnovationNumber(), newConnection);
+            success = true;
+        }
+        if (success == false)
+        {
+            Debug.Log("Failed to add connection after " + maxAttempt + " tries");
+        }
     }
 
     public void AddNodeMutation(Counter connectionInnovation, Counter nodeInnovation)
@@ -169,7 +208,7 @@ public class Genome
         _connectionGenes.Add(newConnection2.GetInnovationNumber(), newConnection2);
     }
 
-    public static Genome Crossover(Genome parent1, Genome parent2)
+    public static Genome Crossover(Genome parent1, Genome parent2, float DISABLED_GENE_INHERITING_CHANCE)
     {
         Genome child = new Genome();
         foreach (NodeGenes parentNode in parent1.GetNodeGenes().Values)
@@ -387,17 +426,17 @@ public class Genome
         averageW = weightDifference / matching;
     }
 
-    internal void Mutate()
+    public void Mutate(float PROBABILITY_PERTURBING)
     {
         foreach (ConnectionGenes connection in _connectionGenes.Values)
         {
-            if (UnityEngine.Random.Range(0f, 1f) < 0.8f)
+            if (UnityEngine.Random.Range(0f, 1f) < PROBABILITY_PERTURBING)
             {
-                connection.SetWeight(connection.GetWeight() * UnityEngine.Random.Range(-0.1f, 0.1f));
+                connection.SetWeight(connection.GetWeight() * RandomHelper.RandomGaussian());
             }
             else
             {
-                connection.SetWeight(UnityEngine.Random.Range(0, 1) * 4f - 2f);
+                connection.SetWeight(RandomHelper.RandomZeroToOne() * 4f - 2f);
             }
         }
     }
