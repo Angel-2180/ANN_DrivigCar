@@ -11,12 +11,13 @@ public class NodeGenes
         this._id = id;
     }
 
+    public NodeGenes(NodeGenes node)
+    {
+        this._type = node.GetNodeType();
+        this._id = node.GetId();
+    }
+
     public NodeType GetNodeType() => _type;
 
     public int GetId() => _id;
-
-    public NodeGenes Clone()
-    {
-        return new NodeGenes(_type, _id);
-    }
 }
