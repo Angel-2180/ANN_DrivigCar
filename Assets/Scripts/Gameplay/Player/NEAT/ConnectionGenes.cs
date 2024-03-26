@@ -34,11 +34,6 @@ public class ConnectionGenes
 
     public int GetInnovationNumber() => _innovationNumber;
 
-    public ConnectionGenes Clone()
-    {
-        return new ConnectionGenes(_inNode, _outNode, _weight, _expressed, _innovationNumber);
-    }
-
     public void Disable()
     {
         _expressed = false;
