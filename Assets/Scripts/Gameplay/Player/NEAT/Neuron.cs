@@ -23,6 +23,14 @@ public class Neuron
         }
     }
 
+    public float[] Inputs
+    {
+        get
+        {
+            return _inputs;
+        }
+    }
+
     public float[] Weights
     {
         get
@@ -88,7 +96,7 @@ public class Neuron
     {
         for (int i = 0; i < _inputs.Length; i++)
         {
-            if (float.IsNaN(_inputs[i]))
+            if (_inputs[i] == float.MaxValue)
             {
                 return false;
             }
@@ -101,7 +109,7 @@ public class Neuron
         bool found = false;
         for (int i = 0; i < _inputs.Length; i++)
         {
-            if (float.IsNaN(_inputs[i]))
+            if (_inputs[i] == float.MaxValue)
             {
                 _inputs[i] = value;
                 found = true;
@@ -118,7 +126,7 @@ public class Neuron
     {
         for (int i = 0; i < _inputs.Length; i++)
         {
-            _inputs[i] = float.NaN;
+            _inputs[i] = float.MaxValue;
         }
         _output = 0;
     }
