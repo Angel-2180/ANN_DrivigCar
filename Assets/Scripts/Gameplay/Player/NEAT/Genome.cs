@@ -22,12 +22,12 @@ public class Genome
 
         foreach (int index in genome.GetConnectionGenes().Keys)
         {
-            _connectionGenes.Add(index, genome.GetConnectionGenes()[index].Clone());
+            _connectionGenes.Add(index, new ConnectionGenes(genome.GetConnectionGenes()[index]));
         }
 
         foreach (int index in genome.GetNodeGenes().Keys)
         {
-            _nodeGenes.Add(index, genome.GetNodeGenes()[index].Clone());
+            _nodeGenes.Add(index, new NodeGenes(genome.GetNodeGenes()[index]));
         }
     }
 
@@ -181,7 +181,7 @@ public class Genome
             return;
         }
 
-        ConnectionGenes connection = suitableConnections[UnityEngine.Random.Range(0, suitableConnections.Count)];
+        ConnectionGenes connection = suitableConnections[RandomHelper.RandomInt(0, suitableConnections.Count)];
 
         NodeGenes inputNode = _nodeGenes.GetValueOrDefault(connection.GetInNode());
         NodeGenes outputNode = _nodeGenes.GetValueOrDefault(connection.GetOutNode());
@@ -213,22 +213,25 @@ public class Genome
         Genome child = new Genome();
         foreach (NodeGenes parentNode in parent1.GetNodeGenes().Values)
         {
-            child.AddNodeGene(parentNode.Clone());
+            child.AddNodeGene(new NodeGenes(parentNode));
         }
 
         foreach (ConnectionGenes parent1Connection in parent1.GetConnectionGenes().Values)
         {
             if (parent2.GetConnectionGenes().ContainsKey(parent1Connection.GetInnovationNumber()))
             {
-                ConnectionGenes childConGen =
-                    UnityEngine.Random.Range(0, 1) == 1 ?
-                    parent1Connection.Clone() :
-                    parent2.GetConnectionGenes()[parent1Connection.GetInnovationNumber()].Clone();
-                child.AddConnectionGene(childConGen);
+                ConnectionGenes parent2Conn = parent2.GetConnectionGenes()[parent1Connection.GetInnovationNumber()];
+                bool disabled = !parent1Connection.IsExpressed() || !parent2Conn.IsExpressed();
+                ConnectionGenes childCon = RandomHelper.RandomBool() ? new ConnectionGenes(parent1Connection) : new ConnectionGenes(parent2Conn);
+                if (disabled && RandomHelper.RandomZeroToOne() < DISABLED_GENE_INHERITING_CHANCE)
+                {
+                    childCon.Disable();
+                }
+                child.AddConnectionGene(childCon);
             }
             else //disjoint or excess gene
             {
-                ConnectionGenes childConGen = parent1Connection.Clone();
+                ConnectionGenes childConGen = new ConnectionGenes(parent1Connection);
                 child.AddConnectionGene(childConGen);
             }
         }
