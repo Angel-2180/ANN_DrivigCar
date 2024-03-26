@@ -16,4 +16,10 @@ public static class RandomHelper
     {
         return UnityEngine.Random.Range(-1, 1);
     }
+
+    public static bool RandomBool()
+    {
+        System.Random random = new System.Random();
+        return random.Next(2) > 0;
+    }
 }
