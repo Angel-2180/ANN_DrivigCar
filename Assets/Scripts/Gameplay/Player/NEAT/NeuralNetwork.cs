@@ -61,7 +61,7 @@ public class NeuralNetwork
 
         _unprocessed.Clear();
         _unprocessed.AddRange(_neurons.Values);
-
+        Neuron outputNeuron;
         for (int i = 0; i < inputParam.Length; i++) // loop through input neurons
         {
             Neuron inputNeuron = _neurons[_inputIDs[i]];
@@ -70,7 +70,7 @@ public class NeuralNetwork
 
             for (int j = 0; j < inputNeuron.OutputIDs.Length; j++) // loop through output neurons
             {
-                Neuron outputNeuron = _neurons[inputNeuron.OutputIDs[j]];
+                outputNeuron = _neurons[inputNeuron.OutputIDs[j]];
                 outputNeuron.FeedInput(inputNeuron.Output * inputNeuron.Weights[j]); // add the input directly to the next neuron, using the correct weight for the connection
             }
             _unprocessed.Remove(inputNeuron);
