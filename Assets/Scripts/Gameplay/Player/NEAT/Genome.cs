@@ -101,49 +101,41 @@ public class Genome
             }
 
             // check for circular connection
-            List<int> needsCheck = new List<int>();
+            HashSet<int> visitedNodes = new HashSet<int>(); // Use HashSet to prevent duplicates
+            Queue<int> needsCheck = new Queue<int>(); // Use Queue for efficient FIFO operations
             List<int> nodeIDs = new List<int>();
-            foreach (int ConnectionID in _connectionGenes.Keys)
-            {
-                ConnectionGenes con = _connectionGenes[ConnectionID];
 
-                if (con.GetInNode() == outNode)
-                {
-                    needsCheck.Add(outNode);
-                    nodeIDs.Add(outNode);
-                }
-            }
-            while (needsCheck.Count != 0)
+            // Add the output node initially
+            needsCheck.Enqueue(outputNode.GetId());
+            visitedNodes.Add(outputNode.GetId());
+
+            // BFS traversal to find reachable nodes
+            while (needsCheck.Count > 0)
             {
-                int nodeID = needsCheck[0];
-                foreach (int ConnectionID in _connectionGenes.Keys)
+                int currentNode = needsCheck.Dequeue();
+                foreach (int conID in _connectionGenes.Keys)
                 {
-                    ConnectionGenes con = _connectionGenes[ConnectionID];
-                    if (con.GetInNode() == nodeID)
+                    ConnectionGenes con = _connectionGenes[conID];
+                    if (con.GetInNode() == currentNode && !visitedNodes.Contains(con.GetOutNode()))
                     {
-                        needsCheck.Add(con.GetOutNode());
+                        visitedNodes.Add(con.GetOutNode());
+                        needsCheck.Enqueue(con.GetOutNode());
                         nodeIDs.Add(con.GetOutNode());
                     }
                 }
-                needsCheck.RemoveAt(0);
             }
-            foreach (int i in nodeIDs)
-            {
-                if (i == inNode)
-                {
-                    connectionImpossible = true;
-                    break;
-                }
-            }
+
+            // Check if input node is reachable
+            connectionImpossible = nodeIDs.Contains(inputNode.GetId());
             bool connectionExists = false;
             foreach (ConnectionGenes con in _connectionGenes.Values)
             {
-                if (con.GetInNode() == inNode && con.GetOutNode() == outNode)
+                if (con.GetInNode() == inputNode.GetId() && con.GetOutNode() == outputNode.GetId())
                 {
                     connectionExists = true;
                     break;
                 }
-                else if (con.GetInNode() == outNode && con.GetOutNode() == inNode)
+                else if (con.GetInNode() == outputNode.GetId() && con.GetOutNode() == inputNode.GetId())
                 {
                     connectionExists = true;
                     break;
@@ -159,9 +151,10 @@ public class Genome
             _connectionGenes.Add(newConnection.GetInnovationNumber(), newConnection);
             success = true;
         }
+
         if (success == false)
         {
-            Debug.Log("Failed to add connection after " + maxAttempt + " tries");
+            //Debug.Log("Failed to add connection after " + maxAttempt + " tries");
         }
     }
 
@@ -433,7 +426,7 @@ public class Genome
     {
         foreach (ConnectionGenes connection in _connectionGenes.Values)
         {
-            if (UnityEngine.Random.Range(0f, 1f) < PROBABILITY_PERTURBING)
+            if (RandomHelper.RandomZeroToOne() < PROBABILITY_PERTURBING)
             {
                 connection.SetWeight(connection.GetWeight() * RandomHelper.RandomGaussian());
             }
