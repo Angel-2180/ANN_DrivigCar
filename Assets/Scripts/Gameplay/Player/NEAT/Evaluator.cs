@@ -15,7 +15,7 @@ public class Evaluator
     private Counter _nodeInnovation;
     private Counter _connectionInnovation;
 
-    private Evaluator(NEATConfig config, IGenesisGenomeProvider generator, Counter nodeInnovation, Counter connectionInnovation)
+    public Evaluator(NEATConfig config, GenesisGenomeProvider generator, Counter nodeInnovation, Counter connectionInnovation)
     {
         this.EvaluateGenome = EvaluateGenomeImpl;
         this.config = config;
@@ -63,7 +63,13 @@ public class Evaluator
 
         // kill 9/10 worst genomes
         int cutoffIndex = _evaluatedGenomes.Count / 10;
-        _evaluatedGenomes.RemoveRange(cutoffIndex, _evaluatedGenomes.Count);
+
+        for (int i = cutoffIndex; i < _evaluatedGenomes.Count; i++)
+        {
+            _evaluatedGenomes[i].genome = null;
+        }
+        //remove all null genomes
+        _evaluatedGenomes.RemoveAll(x => x.genome == null);
 
         _nextGeneration.Clear();
 
@@ -78,10 +84,7 @@ public class Evaluator
             {
                 FitnessGenome parent1 = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
                 FitnessGenome parent2 = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
-                while (parent1 == parent2)
-                {
-                    parent2 = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
-                }
+
                 Genome child;
                 if (parent1.fitness > parent2.fitness)
                 {
@@ -103,7 +106,7 @@ public class Evaluator
                 }
                 if (RandomHelper.RandomZeroToOne() < config.ADD_CONNECTION_RATE)
                 {
-                    child.AddConnectionMutation(_connectionInnovation, 100);
+                    child.AddConnectionMutation(_connectionInnovation, 1);
                 }
                 _nextGeneration.Add(child);
             }
@@ -124,7 +127,7 @@ public class Evaluator
         get { return _genomePopulation; }
     }
 
-    public FitnessGenome FitnessGenome
+    public FitnessGenome BestGenome
     {
         get { return _bestGenome; }
     }
