@@ -9,43 +9,60 @@ public class NetworkTester : MonoBehaviour
     // Start is called before the first frame update
     private void Start() //debug genome here
     {
-        Counter nodeInnovation = new Counter();
-        Counter connectionInnovation = new Counter();
+        Genome genome;
+        NeuralNetwork net;
 
-        Genome genome = new Genome();
-        int n1 = nodeInnovation.GetInnovation();
-        int n2 = nodeInnovation.GetInnovation();
-        int n3 = nodeInnovation.GetInnovation();
-        genome.AddNodeGene(new NodeGenes(NodeType.INPUT, n1));
-        genome.AddNodeGene(new NodeGenes(NodeType.INPUT, n2));
-        genome.AddNodeGene(new NodeGenes(NodeType.OUTPUT, n3));
+        float[] input;
+        float[] output;
+        Debug.Log("==========================TEST 1==========================");
+        genome = new Genome();
+        genome.AddNodeGene(new NodeGenes(NodeType.INPUT, 0));
+        genome.AddNodeGene(new NodeGenes(NodeType.OUTPUT, 1));
 
-        int c1 = connectionInnovation.GetInnovation();
-        int c2 = connectionInnovation.GetInnovation();
+        genome.AddConnectionGene(new ConnectionGenes(0, 1, 0.5f, true, 0));
 
-        genome.AddConnectionGene(new ConnectionGenes(n1, n3, 0.5f, true, c1));
-        genome.AddConnectionGene(new ConnectionGenes(n2, n3, 0.5f, true, c2));
-
-
-
-        //override EvaluateGenome method inline
-
-        Evaluator evaluator = new Evaluator(100, genome, nodeInnovation, connectionInnovation)
+        net = new NeuralNetwork(genome);
+        input = new float[] { 1 };
+        for (int i = 0; i < 3; i++)
         {
-            EvaluateGenome = (Genome x) => x.GetConnectionGenes().Values.Count
-        };
+            output = net.Calculate(input);
 
-        for (int i = 0; i < 100; i++)
+            Debug.Log("output is of length=" + output.Length + " and has output[0]=" + output[0] + " expecting 0.9192");
+        }
+
+        Debug.Log("==========================TEST 2==========================");
+
+        genome = new Genome();
+        genome.AddNodeGene(new NodeGenes(NodeType.INPUT, 0));                    // node id is 0
+        genome.AddNodeGene(new NodeGenes(NodeType.OUTPUT, 1));                   // node id is 1
+
+        genome.AddConnectionGene(new ConnectionGenes(0, 1, 0.1f, true, 0));  // conn id is 0
+
+        net = new NeuralNetwork(genome);
+        input = new float[] { -0.5f };
+        for (int i = 0; i < 3; i++)
         {
-            evaluator.Evaluate();
-            Debug.Log("Generation: " + i);
-            Debug.Log("Highest Fitness: " + evaluator.GetHighestFitness());
-            Debug.Log("Species Count: " + evaluator.GetSpeciesAmount());
-            Debug.Log("\n");
-            if (i % 10 == 0)
-            {
-                GenomePrinter.PrintGenome(evaluator.GetBestGenome(), "Output/Connection_amount_1/" + i + ".txt");
-            }
+            output = net.Calculate(input);
+
+            Debug.Log("output is of length=" + output.Length + " and has output[0]=" + output[0] + " expecting 0.50973");
+        }
+
+        Debug.Log("==========================TEST 3==========================");
+
+        genome = new Genome();
+        genome.AddNodeGene(new NodeGenes(NodeType.INPUT, 0));                    // node id is 0
+        genome.AddNodeGene(new NodeGenes(NodeType.OUTPUT, 1));                   // node id is 1
+        genome.AddNodeGene(new NodeGenes(NodeType.HIDDEN, 2));                   // node id is 2
+
+        genome.AddConnectionGene(new ConnectionGenes(0, 2, 0.4f, true, 0));  // conn id is 0
+        genome.AddConnectionGene(new ConnectionGenes(2, 1, 0.7f, true, 1));  // conn id is 1
+
+        net = new NeuralNetwork(genome);
+        input = new float[] { 0.9f };
+        for (int i = 0; i < 3; i++)
+        {
+            output = net.Calculate(input);
+            Debug.Log("output is of length=" + output.Length + " and has output[0]=" + output[0] + " expecting 0.9524");
         }
     }
 
