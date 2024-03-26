@@ -95,7 +95,7 @@ public class Evaluator
                 //Mutations
                 if (RandomHelper.RandomZeroToOne() < config.MUTATION_RATE)
                 {
-                    child.Mutate();
+                    child.Mutate(config.PERTURBING_RATE);
                 }
                 if (RandomHelper.RandomZeroToOne() < config.ADD_NODE_RATE)
                 {
@@ -103,9 +103,39 @@ public class Evaluator
                 }
                 if (RandomHelper.RandomZeroToOne() < config.ADD_CONNECTION_RATE)
                 {
-                    child.AddConnectionMutation(_connectionInnovation);
+                    child.AddConnectionMutation(_connectionInnovation, 100);
                 }
+                _nextGeneration.Add(child);
+            }
+            else
+            {
+                FitnessGenome parent = _evaluatedGenomes[RandomHelper.RandomInt(0, _evaluatedGenomes.Count)];
+                Genome child = new Genome(parent.genome);
+                child.Mutate(config.PERTURBING_RATE);
+                _nextGeneration.Add(child);
             }
         }
+        _genomePopulation.Clear();
+        _genomePopulation.AddRange(_nextGeneration);
+    }
+
+    public List<Genome> GenomesPopulation
+    {
+        get { return _genomePopulation; }
+    }
+
+    public FitnessGenome FitnessGenome
+    {
+        get { return _bestGenome; }
+    }
+
+    public int GenomesAmount
+    {
+        get { return _genomePopulation.Count; }
+    }
+
+    public List<FitnessGenome> LastGenResults
+    {
+        get { return _lastGenResults; }
     }
 }
